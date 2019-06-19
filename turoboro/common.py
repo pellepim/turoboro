@@ -1,0 +1,36 @@
+from datetime import datetime
+import turoboro
+
+
+def is_iso_datetime(iso_timestamp):
+    return datetime.strptime(iso_timestamp, '%Y-%m-%dT%H:%M:%S')
+
+
+def is_list_of_days(days):
+    if not isinstance(days, (list, tuple)):
+        raise ValueError('Expecting a list or tuple of days of the week, each "day" being an int between 0 to 6')
+
+    invalid_days = [d for d in days if d not in turoboro.DAYS]
+
+    if invalid_days:
+        raise ValueError('Expecting a valid days of the week, between 0 and 6. Invalids %s' % invalid_days)
+
+    if len(days) > 7:
+        raise ValueError('There are only seven days to a week, not %s' % len(days))
+
+    return days
+
+
+def is_list_of_months(months):
+    if not isinstance(months, (list, tuple)):
+        raise ValueError('Expecting a list or tuple of months of the year, each "month" being an int between 1 to 12')
+
+    invalid_months = [m for m in months if m not in turoboro.MONTHS]
+
+    if invalid_months:
+        raise ValueError('Expecting valid months of the year, between 1 to 12. Invalid: %s' % invalid_months)
+
+    if len(months) > 12:
+        raise ValueError('There are only twelve months to a year, not %s' % len(months))
+
+    return months
