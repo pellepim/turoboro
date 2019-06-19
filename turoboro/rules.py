@@ -3,16 +3,17 @@ import abc
 import voluptuous
 import turoboro.common
 import turoboro.constants
+from copy import deepcopy
 
 
 class Rule(object, metaclass=abc.ABCMeta):
-    @abc.abstractmethod
-    def get_spec(self):
-        pass
+    @property
+    def spec(self):
+        return getattr(self, '_spec', {})
 
-    @abc.abstractmethod
-    def set_spec(self, spec):
-        pass
+    @spec.setter
+    def spec(self, spec):
+        setattr(self, '_spec', self.validate_spec(spec))
 
     @abc.abstractmethod
     def compute(self):
@@ -21,6 +22,12 @@ class Rule(object, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def validate_spec(self, spec):
         pass
+
+    def set_if_valid(self, field, value):
+        spec = deepcopy(self.spec)
+        spec[field] = value
+        self.validate_spec(spec)
+        self.spec = spec
 
 
 class DailyRule(Rule):
@@ -31,12 +38,21 @@ class DailyRule(Rule):
         ),
         'rule': 'daily',
         'repeat': voluptuous.Range(min=1, max=7),
-        'except_days': voluptuous.Any(
-            None, turoboro.common.is_list_of_days
+        'exceptDays': voluptuous.Or(
+            None,
+            voluptuous.All(
+                turoboro.common.is_list_of_days,
+                voluptuous.Length(min=1, max=6)
+            )
         ),
-        'except_months': voluptuous.Any(
-            None, turoboro.common.is_list_of_months
-        )
+        'exceptMonths': voluptuous.Or(
+            None,
+            voluptuous.All(
+                turoboro.common.is_list_of_months,
+                voluptuous.Length(min=1, max=11)
+            )
+        ),
+        'hour': voluptuous.Range(min=0, max=23)
     })
 
     def __init__(self, start=None):
@@ -50,15 +66,10 @@ class DailyRule(Rule):
             "start": start.isoformat(),
             "rule": "daily",
             "repeat": 1,
-            "exceptWeekdays": None,
-            "exceptMonths": None
+            "exceptDays": None,
+            "exceptMonths": None,
+            "hour": 0
         }
-
-    def get_spec(self):
-        return self.spec
-
-    def set_spec(self, spec):
-        self.spec = self.validate_spec(spec)
 
     def validate_spec(self, spec):
         return self.SPEC_SCHEMA(spec)
@@ -66,6 +77,18 @@ class DailyRule(Rule):
     def compute(self):
         pass
 
+    def repeat(self, day_interval):
+        self.set_if_valid('repeat', day_interval)
+        return self
 
+    def except_days(self, days):
+        self.set_if_valid('exceptDays', days)
+        return self
 
+    def except_months(self, months):
+        self.set_if_valid('exceptMonths', months)
+        return self
 
+    def hour(self, hour):
+        self.set_if_valid('hour', hour)
+        return self

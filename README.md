@@ -20,9 +20,10 @@ Example: "Every day at 8 o'clock, except on weekends, and never in June."
 
     >>> import turoboro
     >>> rule = turoboro.DailyRule()
-    >>> rule.repeat_every(3)
-    >>> rule.except_week_days((turoboro.SATURDAY,turoboro.SUNDAY))
+    >>> rule.repeat(3)
+    >>> rule.except_days((turoboro.SATURDAY,turoboro.SUNDAY))
     >>> rule.except_months((turoboro.JUNE,))
+    >>> rule.hour(8)
     >>> rule.compute()
     
     >>> rule.get_spec()
@@ -33,6 +34,6 @@ Example: "Every day at 8 o'clock, except on weekends, and never in June."
         "repeat": 3,
         "exceptWeekdays": [0,6],
         "exceptMonths": [6],
-        "hour": 0  # Default to hour 0 if unspecified
+        "hour": 8  # Default to hour 0 if unspecified
     }
     

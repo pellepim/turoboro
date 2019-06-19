@@ -3,7 +3,7 @@ import turoboro
 
 
 def is_iso_datetime(iso_timestamp):
-    return datetime.strptime(iso_timestamp, '%Y-%m-%dT%H:%M:%S')
+    return iso_timestamp if datetime.strptime(iso_timestamp, '%Y-%m-%dT%H:%M:%S') else None
 
 
 def is_list_of_days(days):
