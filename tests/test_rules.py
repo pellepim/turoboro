@@ -81,4 +81,3 @@ class DailyRuleTests(unittest.TestCase):
         self.assertRaises(voluptuous.MultipleInvalid, self.daily_rule.hour, -1)
         self.assertRaises(voluptuous.MultipleInvalid, self.daily_rule.hour, 24)
 
-    
