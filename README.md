@@ -1,3 +1,4 @@
+[![CircleCI](https://circleci.com/gh/pellepim/turoboro.svg?style=svg)](https://circleci.com/gh/pellepim/turoboro)
 # turoboro
 A python library for specifying time rules and getting sensible timestamps in return.
 
