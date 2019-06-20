@@ -5,6 +5,6 @@ jobs:
       - image: circleci/ruby:2.4.1
     steps:
       - checkout
-      - virtualenv venv -p python3
-      - source venv/bin/activate
-      - python -m unittest
+      - run: virtualenv venv -p python3
+      - run: source venv/bin/activate
+      - run: python -m unittest
