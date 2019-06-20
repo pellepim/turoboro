@@ -2,9 +2,14 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/ruby:2.4.1
+      - image: circleci/python:3.6.7
     steps:
       - checkout
-      - run: virtualenv venv -p python3
-      - run: source venv/bin/activate
-      - run: python -m unittest
+      - run: 
+        name: install dependencies
+        command: |
+          mkdir -p ./venv
+          virtualenv ./venv
+          . venv/bin/activate
+          pip install -r requirements.txt
+
