@@ -1,5 +1,6 @@
 from datetime import datetime
 import turoboro
+import calendar
 
 
 def is_iso_datetime(iso_timestamp):
@@ -34,3 +35,16 @@ def is_list_of_months(months):
         raise ValueError('There are only twelve months to a year, not %s' % len(months))
 
     return months
+
+
+def datetime_from_isoformat(ts):
+    return datetime.strptime(ts, '%Y-%m-%dT%H:%M:%S')
+
+
+def convert_datetime_to(dt, to=turoboro.ISO):
+    if to == turoboro.ISO:
+        return dt.isoformat()
+    if to == turoboro.POSIX:
+        return dt.timestamp()
+
+    return dt

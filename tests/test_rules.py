@@ -1,13 +1,14 @@
 import unittest
 import turoboro.rules
+import turoboro.common
 from datetime import datetime
 import voluptuous
 import itertools
 
 
-class DailyRuleTests(unittest.TestCase):
+class DailyRuleSetupTests(unittest.TestCase):
     def setUp(self):
-        self.starting_point = datetime.strptime('2014-01-01T00:00:00', '%Y-%m-%dT%H:%M:%S')
+        self.starting_point = turoboro.common.datetime_from_isoformat('2014-01-01T00:00:00')
         self.daily_rule = turoboro.rules.DailyRule(self.starting_point)
 
     def test_default_spec(self):
@@ -17,7 +18,8 @@ class DailyRuleTests(unittest.TestCase):
             'hour': 0,
             'repeat': 1,
             'rule': 'daily',
-            'start': '2014-01-01T00:00:00'
+            'start': '2014-01-01T00:00:00',
+            'end': None
         }
 
         self.assertEqual(self.daily_rule.spec, expected)
@@ -81,3 +83,89 @@ class DailyRuleTests(unittest.TestCase):
         self.assertRaises(voluptuous.MultipleInvalid, self.daily_rule.hour, -1)
         self.assertRaises(voluptuous.MultipleInvalid, self.daily_rule.hour, 24)
 
+    def test_end(self):
+        # End date cannot be before start date
+        self.assertRaises(ValueError, self.daily_rule.end, turoboro.common.datetime_from_isoformat('2013-12-31T00:00:00'))
+        self.daily_rule.end(turoboro.common.datetime_from_isoformat('2014-05-30T00:00:00'))
+        self.assertEqual(self.daily_rule.spec['end'], '2014-05-30T00:00:00')
+
+
+class DailyRuleComputeTests(unittest.TestCase):
+    def setUp(self):
+        self.starting_point = turoboro.common.datetime_from_isoformat('2014-01-01T00:00:00')
+        self.daily_rule = turoboro.rules.DailyRule(self.starting_point)
+
+    def test_basic(self):
+        expected = '2014-01-02T00:00:00'
+        actual = self.daily_rule.compute()
+
+        self.assertEqual(expected, actual)
+
+    def test_manipulate_hour(self):
+        expected = '2014-01-02T03:00:00'
+        self.daily_rule.hour(3)
+        actual = self.daily_rule.compute()
+
+        self.assertEqual(expected, actual)
+
+    def test_count(self):
+        expected = ['2014-01-02T00:00:00', '2014-01-03T00:00:00', '2014-01-04T00:00:00']
+        actual = self.daily_rule.compute(count=3)
+        self.assertEqual(expected, actual)
+
+    def test_manipulate_repeat_over_weekends(self):
+        """
+        We're asking for every third day, for the next coming 8 iterations, except on weekends. Starting on
+        January 1st 2014 that would exclude the 4th and the 19th from the list.
+        """
+        expected = ['2014-01-07T00:00:00', '2014-01-10T00:00:00', '2014-01-13T00:00:00', '2014-01-16T00:00:00',
+                    '2014-01-22T00:00:00']
+        self.daily_rule.repeat(3)
+        self.daily_rule.except_days(turoboro.WEEKEND)
+        actual = self.daily_rule.compute(count=7)
+        self.assertEqual(expected, actual)
+
+    def test_manipulate_repeat_over_months(self):
+        """
+        We're asking for every third day, for the next coming 21 iterations, except in February. Starting on
+        January 1st 2014 that would exclude any days in February
+        """
+        expected = [
+            '2014-01-04T00:00:00', '2014-01-07T00:00:00', '2014-01-10T00:00:00', '2014-01-13T00:00:00',
+            '2014-01-16T00:00:00', '2014-01-19T00:00:00', '2014-01-22T00:00:00', '2014-01-25T00:00:00',
+            '2014-01-28T00:00:00', '2014-01-31T00:00:00', '2014-03-02T00:00:00', '2014-03-05T00:00:00'
+        ]
+        self.daily_rule.repeat(3)
+        self.daily_rule.except_months((turoboro.FEBRUARY,))
+        actual = self.daily_rule.compute(count=21)
+        self.assertEqual(expected, actual)
+
+    def test_manipulate_end(self):
+        self.daily_rule.end(turoboro.common.datetime_from_isoformat('2014-05-30T00:00:00'))
+        self.daily_rule.repeat(7)
+        expected = ['2014-01-08T00:00:00', '2014-01-15T00:00:00', '2014-01-22T00:00:00', '2014-01-29T00:00:00',
+                    '2014-02-05T00:00:00', '2014-02-12T00:00:00', '2014-02-19T00:00:00', '2014-02-26T00:00:00',
+                    '2014-03-05T00:00:00', '2014-03-12T00:00:00', '2014-03-19T00:00:00', '2014-03-26T00:00:00',
+                    '2014-04-02T00:00:00', '2014-04-09T00:00:00', '2014-04-16T00:00:00', '2014-04-23T00:00:00',
+                    '2014-04-30T00:00:00', '2014-05-07T00:00:00', '2014-05-14T00:00:00', '2014-05-21T00:00:00',
+                    '2014-05-28T00:00:00']
+        actual = self.daily_rule.compute(count=turoboro.FULL_RANGE)
+        self.assertEqual(expected, actual)
+
+    def test_staggered_once(self):
+        self.daily_rule.repeat(7).end(turoboro.common.datetime_from_isoformat('2014-05-30T00:00:00'))
+        expected = '2014-03-12T00:00:00'
+        actual = self.daily_rule.compute(
+            starting_at=turoboro.common.datetime_from_isoformat('2014-03-08T00:00:00')
+        )
+        self.assertEqual(expected, actual)
+
+    def test_staggered_in_chain(self):
+        self.daily_rule.repeat(7).end(turoboro.common.datetime_from_isoformat('2014-05-30T00:00:00'))
+        expected = ['2014-03-12T00:00:00', '2014-03-19T00:00:00', '2014-03-26T00:00:00',
+                    '2014-04-02T00:00:00']
+        actual = self.daily_rule.compute(
+            starting_at=turoboro.common.datetime_from_isoformat('2014-03-08T00:00:00'),
+            count=4
+        )
+        self.assertEqual(expected, actual)
