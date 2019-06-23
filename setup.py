@@ -1,5 +1,4 @@
 import setuptools
-from setuptools import find_namespace_packages
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
@@ -14,7 +13,6 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/pellepim/turoboro",
-    package_dir={'': ''},
     packages=['turoboro'],
     classifiers=[
         "Programming Language :: Python :: 3",

@@ -143,7 +143,7 @@ class DailyRuleSetupTests(unittest.TestCase):
         self.assertRaises(ValueError, turoboro.DailyRule, 'asd')
 
     def test_reset_except_weekdays(self):
-        daily_rule = turoboro.DailyRule(datetime(2014, 1, 1), except_days=turoboro.WEEKEND)
+        daily_rule = turoboro.DailyRule(datetime(2014, 1, 1), except_weekdays=turoboro.WEEKEND)
         self.assertEqual(daily_rule.spec['except_days'], turoboro.WEEKEND)
         daily_rule.except_weekdays(None)
         self.assertEqual(daily_rule.spec['except_days'], None)
@@ -169,7 +169,7 @@ class DailyRuleSetupTests(unittest.TestCase):
 
 class DailyRuleWithEndDateTests(unittest.TestCase):
     def test(self):
-        daily_rule = turoboro.DailyRule(datetime(2014, 1, 1), except_days=turoboro.WEEKEND)
+        daily_rule = turoboro.DailyRule(datetime(2014, 1, 1), except_weekdays=turoboro.WEEKEND)
         # 1. Lets try a daily rule that bypasses weekends for the duration of January 2014
         daily_rule.end_on(datetime(2014, 1, 31))
         result = daily_rule.compute()
@@ -220,7 +220,7 @@ class DailyRuleWithEndDateTests(unittest.TestCase):
 
     def test_staggered(self):
         daily_rule = turoboro.DailyRule(
-            datetime(2014, 1, 1), end=datetime(2014, 12, 31), every_nth_day=7, except_days=turoboro.WEEKEND,
+            datetime(2014, 1, 1), end_on=datetime(2014, 12, 31), every_nth_day=7, except_weekdays=turoboro.WEEKEND,
             except_months=(turoboro.FEBRUARY, turoboro.OCTOBER), on_hour=14)
 
         expected_all = ['2014-01-01T14:00:00', '2014-01-08T14:00:00', '2014-01-15T14:00:00', '2014-01-22T14:00:00',
@@ -247,8 +247,8 @@ class DailyRuleWithEndDateTests(unittest.TestCase):
         self.assertEqual(result_staggered.count, 6)
 
     def test_half_year(self):
-        daily_rule = turoboro.DailyRule(start=datetime(2014, 1, 1), end=datetime(2020, 12, 31), every_nth_day=183,
-                                        except_days=turoboro.WEEKEND)
+        daily_rule = turoboro.DailyRule(start=datetime(2014, 1, 1), end_on=datetime(2020, 12, 31), every_nth_day=183,
+                                        except_weekdays=turoboro.WEEKEND)
         expected_half_year_results = ['2014-01-01T00:00:00', '2014-07-03T00:00:00', '2015-01-02T00:00:00',
                                       '2016-07-04T00:00:00', '2017-01-03T00:00:00', '2017-07-05T00:00:00',
                                       '2018-01-04T00:00:00', '2018-07-06T00:00:00', '2020-01-06T00:00:00',
@@ -258,7 +258,7 @@ class DailyRuleWithEndDateTests(unittest.TestCase):
 
 class DailyRuleWithRepeatNTimesTests(unittest.TestCase):
     def test(self):
-        daily_rule = turoboro.DailyRule(datetime(2014, 1, 1), repeat_n_times=10, except_days=turoboro.WEEKEND,
+        daily_rule = turoboro.DailyRule(datetime(2014, 1, 1), repeat_n_times=10, except_weekdays=turoboro.WEEKEND,
                                         on_hour=8)
         expected  = ['2014-01-01T08:00:00', '2014-01-02T08:00:00', '2014-01-03T08:00:00', '2014-01-06T08:00:00',
                      '2014-01-07T08:00:00', '2014-01-08T08:00:00', '2014-01-09T08:00:00', '2014-01-10T08:00:00',
@@ -289,7 +289,7 @@ class DailyRuleWithRepeatNTimesTests(unittest.TestCase):
 
     def test_staggered(self):
         daily_rule = turoboro.DailyRule(
-            datetime(2014, 1, 1), repeat_n_times=44, every_nth_day=7, except_days=turoboro.WEEKEND,
+            datetime(2014, 1, 1), repeat_n_times=44, every_nth_day=7, except_weekdays=turoboro.WEEKEND,
             except_months=(turoboro.FEBRUARY, turoboro.OCTOBER), on_hour=14)
 
         expected_all = ['2014-01-01T14:00:00', '2014-01-08T14:00:00', '2014-01-15T14:00:00', '2014-01-22T14:00:00',
@@ -318,7 +318,7 @@ class DailyRuleWithRepeatNTimesTests(unittest.TestCase):
 
 class DailyInfiniteRuleTests(unittest.TestCase):
     def test(self):
-        daily_rule = turoboro.DailyRule(datetime(2014, 1, 1), every_nth_day=5, except_days=turoboro.WEEKEND,
+        daily_rule = turoboro.DailyRule(datetime(2014, 1, 1), every_nth_day=5, except_weekdays=turoboro.WEEKEND,
                                         on_hour=8)
         result = daily_rule.compute()
         self.assertTrue(result.infinite)

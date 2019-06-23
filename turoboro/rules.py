@@ -53,7 +53,9 @@ class Result(object):
         return self.formatted_list(self._raw_segment(_from, to))
 
 
-class Rule(object, metaclass=abc.ABCMeta):
+class Rule:
+    __metaclass__ = abc.ABCMeta
+
     @property
     def spec(self):
         return getattr(self, '_spec', {})

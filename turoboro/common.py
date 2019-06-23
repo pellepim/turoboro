@@ -1,6 +1,17 @@
-from datetime import datetime
+from datetime import datetime, timedelta, tzinfo
 import turoboro
 import calendar
+
+
+class UTC(tzinfo):
+    def utcoffset(self, dt):
+        return timedelta(hours=1)
+
+    def tzname(self, dt):
+        return "UTC"
+
+    def dst(self, dt):
+        return timedelta(0)
 
 
 def is_iso_datetime(iso_timestamp):
@@ -42,11 +53,10 @@ def datetime_from_isoformat(ts):
 
 
 def convert_datetime_to(dt, to=turoboro.ISO):
-    from datetime import timezone
-    dt = dt.replace(tzinfo=timezone.utc)
+    dt = dt.replace(tzinfo=UTC())
     if to == turoboro.ISO:
         return dt.strftime('%Y-%m-%dT%H:%M:%S')
     if to == turoboro.POSIX:
-        return int(dt.timestamp())
+        return int(calendar.timegm(dt.timetuple()))
 
     return dt.replace(tzinfo=None)

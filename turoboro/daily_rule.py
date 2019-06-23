@@ -32,7 +32,8 @@ class DailyRule(Rule):
         'on_hour': voluptuous.Range(min=0, max=23)
     })
 
-    def __init__(self, start=None, end=None, repeat_n_times=None, every_nth_day=1, except_days=None, except_months=None, on_hour=0):
+    def __init__(self, start=None, end_on=None, repeat_n_times=None, every_nth_day=1, except_weekdays=None,
+                 except_months=None, on_hour=0):
         if start is None:
             start = datetime.utcnow()
 
@@ -41,11 +42,11 @@ class DailyRule(Rule):
 
         start = start.replace(hour=0, minute=0, second=0, microsecond=0)
 
-        if isinstance(end, datetime):
-            if end < start:
+        if isinstance(end_on, datetime):
+            if end_on < start:
                 raise ValueError('End cannot be before start')
 
-            end = end.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_on = end_on.replace(hour=0, minute=0, second=0, microsecond=0)
 
         self.spec = {
             "start": start.isoformat(),
@@ -62,7 +63,7 @@ class DailyRule(Rule):
             self.repeat_n_times(repeat_n_times)
         self.every_nth_day(every_nth_day)
         try:
-            self.except_weekdays(*except_days)
+            self.except_weekdays(*except_weekdays)
         except TypeError:
             pass
         try:
@@ -70,8 +71,8 @@ class DailyRule(Rule):
         except TypeError:
             pass
         self.on_hour(on_hour)
-        if end:
-            self.end_on(end)
+        if end_on:
+            self.end_on(end_on)
 
     def validate_spec(self, spec):
         """
