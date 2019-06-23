@@ -1,4 +1,4 @@
-[![CircleCI](https://circleci.com/gh/pellepim/turoboro.svg?style=svg)](https://circleci.com/gh/pellepim/turoboro)
+[![CircleCI](https://circleci.com/gh/pellepim/turoboro.svg?style=shield)](https://circleci.com/gh/pellepim/turoboro)
 # turoboro
 A python library for specifying recurring time rules and getting timestamps in return.
 

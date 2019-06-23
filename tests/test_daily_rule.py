@@ -253,3 +253,63 @@ class DailyRuleWithEndDateTests(unittest.TestCase):
                                       '2018-01-04T00:00:00', '2018-07-06T00:00:00', '2020-01-06T00:00:00',
                                       '2020-07-07T00:00:00']
         self.assertEqual(expected_half_year_results, daily_rule.compute().all)
+
+
+class DailyRuleWithRepeatNTimesTests(unittest.TestCase):
+    def test(self):
+        daily_rule = turoboro.DailyRule(datetime(2014, 1, 1), repeat_n_times=10, except_days=turoboro.WEEKEND,
+                                        on_hour=8)
+        expected  = ['2014-01-01T08:00:00', '2014-01-02T08:00:00', '2014-01-03T08:00:00', '2014-01-06T08:00:00',
+                     '2014-01-07T08:00:00', '2014-01-08T08:00:00', '2014-01-09T08:00:00', '2014-01-10T08:00:00',
+                     '2014-01-13T08:00:00', '2014-01-14T08:00:00']
+        result = daily_rule.compute()
+        self.assertEqual(result.first, '2014-01-01T08:00:00')
+        self.assertEqual(result.last, '2014-01-14T08:00:00')
+        self.assertEqual(result.count, 10)
+        self.assertEqual(expected, result.all)
+
+        # Lets change to every third day, until March 31th 2014, excepting weekends and February
+        daily_rule.every_nth_day(3).except_months(turoboro.FEBRUARY).repeat_n_times(15)
+        expected_all = ['2014-01-01T08:00:00', '2014-01-07T08:00:00', '2014-01-10T08:00:00', '2014-01-13T08:00:00',
+                        '2014-01-16T08:00:00', '2014-01-22T08:00:00', '2014-01-28T08:00:00', '2014-01-31T08:00:00',
+                        '2014-03-05T08:00:00', '2014-03-11T08:00:00', '2014-03-14T08:00:00', '2014-03-17T08:00:00',
+                        '2014-03-20T08:00:00', '2014-03-26T08:00:00', '2014-04-01T08:00:00']
+        result = daily_rule.compute()
+        self.assertEqual(expected_all, result.all)
+
+        # Lets get a segment out of our result
+        expected_segment = ['2014-01-31T08:00:00', '2014-03-05T08:00:00', '2014-03-11T08:00:00', '2014-03-14T08:00:00',
+                            '2014-03-17T08:00:00', '2014-03-20T08:00:00', '2014-03-26T08:00:00', '2014-04-01T08:00:00']
+        self.assertEqual(result.segment(datetime(2014, 1, 31)), expected_segment)
+        self.assertEqual(result.segment(datetime(2014, 4, 2)), [])
+        expected_segment = ['2014-01-22T08:00:00', '2014-01-28T08:00:00', '2014-01-31T08:00:00',
+                            '2014-03-05T08:00:00', '2014-03-11T08:00:00']
+        self.assertEqual(result.segment(datetime(2014, 1, 20), datetime(2014, 3, 12)), expected_segment)
+
+    def test_staggered(self):
+        daily_rule = turoboro.DailyRule(
+            datetime(2014, 1, 1), repeat_n_times=44, every_nth_day=7, except_days=turoboro.WEEKEND,
+            except_months=(turoboro.FEBRUARY, turoboro.OCTOBER), on_hour=14)
+
+        expected_all = ['2014-01-01T14:00:00', '2014-01-08T14:00:00', '2014-01-15T14:00:00', '2014-01-22T14:00:00',
+                        '2014-01-29T14:00:00', '2014-03-05T14:00:00', '2014-03-12T14:00:00', '2014-03-19T14:00:00',
+                        '2014-03-26T14:00:00', '2014-04-02T14:00:00', '2014-04-09T14:00:00', '2014-04-16T14:00:00',
+                        '2014-04-23T14:00:00', '2014-04-30T14:00:00', '2014-05-07T14:00:00', '2014-05-14T14:00:00',
+                        '2014-05-21T14:00:00', '2014-05-28T14:00:00', '2014-06-04T14:00:00', '2014-06-11T14:00:00',
+                        '2014-06-18T14:00:00', '2014-06-25T14:00:00', '2014-07-02T14:00:00', '2014-07-09T14:00:00',
+                        '2014-07-16T14:00:00', '2014-07-23T14:00:00', '2014-07-30T14:00:00', '2014-08-06T14:00:00',
+                        '2014-08-13T14:00:00', '2014-08-20T14:00:00', '2014-08-27T14:00:00', '2014-09-03T14:00:00',
+                        '2014-09-10T14:00:00', '2014-09-17T14:00:00', '2014-09-24T14:00:00', '2014-11-05T14:00:00',
+                        '2014-11-12T14:00:00', '2014-11-19T14:00:00', '2014-11-26T14:00:00', '2014-12-03T14:00:00',
+                        '2014-12-10T14:00:00', '2014-12-17T14:00:00', '2014-12-24T14:00:00', '2014-12-31T14:00:00']
+
+        result = daily_rule.compute()
+        self.assertEqual(expected_all, result.all)
+        result_staggered = daily_rule.compute(from_dt=datetime(2014, 5, 29))
+        self.assertEqual(result_staggered.count, 26)
+        self.assertEqual(result_staggered.first, '2014-06-04T14:00:00')
+        self.assertEqual(result_staggered.last, '2014-12-31T14:00:00')
+        result_staggered = daily_rule.compute(from_dt=datetime(2014, 11, 23))
+        self.assertEqual(result_staggered.first, '2014-11-26T14:00:00')
+        self.assertEqual(result_staggered.last, '2014-12-31T14:00:00')
+        self.assertEqual(result_staggered.count, 6)

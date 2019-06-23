@@ -201,16 +201,34 @@ class DailyRule(Rule):
         rest = period.days % self.spec['every_nth_day']
         return from_dt + timedelta(days=self.spec['every_nth_day'] - rest)
 
-    def compute(self, from_dt=None, return_as=turoboro.ISO):
+    def _compute_with_enddate(self, from_dt, working_date, return_as):
         result = []
+        if from_dt is not None and from_dt != working_date:
+            working_date = self._stagger_forward(from_dt)
+        end_date = turoboro.common.datetime_from_isoformat(self.spec['end'])
+        while working_date < end_date:
+            if self._is_allowed(working_date):
+                result.append(working_date)
+            working_date = working_date + timedelta(days=self.spec['every_nth_day'])
+
+        return Result(result, return_as=return_as)
+
+    def _compute_n_times(self, from_dt, working_date, return_as):
+        result = []
+        count = 0
+        if from_dt is not None:
+            from_dt = from_dt.replace(hour=self.spec['on_hour'], minute=0, second=0, microsecond=0)
+        while count < self.spec['repeat']:
+            if self._is_allowed(working_date):
+                result.append(working_date)
+                count += 1
+            working_date = working_date + timedelta(days=self.spec['every_nth_day'])
+
+        return Result(result, return_as=return_as, segment_from=from_dt)
+
+    def compute(self, from_dt=None, return_as=turoboro.ISO):
         working_date = turoboro.common.datetime_from_isoformat(self.spec['start'])
         if self.spec['end'] is not None:
-            if from_dt is not None and from_dt != working_date:
-                working_date = self._stagger_forward(from_dt)
-            end_date = turoboro.common.datetime_from_isoformat(self.spec['end'])
-            while working_date < end_date:
-                if self._is_allowed(working_date):
-                    result.append(working_date)
-                working_date = working_date + timedelta(days=self.spec['every_nth_day'])
-
-            return Result(result, return_as=return_as)
+            return self._compute_with_enddate(from_dt, working_date, return_as)
+        if self.spec['repeat'] is not None:
+            return self._compute_n_times(from_dt, working_date, return_as)
