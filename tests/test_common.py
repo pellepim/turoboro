@@ -43,5 +43,5 @@ class ConvertDatetimeToTest(unittest.TestCase):
         from datetime import datetime
         dt = datetime(2014, 1, 1)
         self.assertEqual(turoboro.common.convert_datetime_to(dt, turoboro.ISO), '2014-01-01T00:00:00')
-        self.assertEqual(turoboro.common.convert_datetime_to(dt, turoboro.POSIX), 1388530800)
+        self.assertEqual(turoboro.common.convert_datetime_to(dt, turoboro.POSIX), 1388534400)
         self.assertEqual(turoboro.common.convert_datetime_to(dt, turoboro.DATETIME_INSTANCE), dt)

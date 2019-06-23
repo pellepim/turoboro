@@ -42,9 +42,11 @@ def datetime_from_isoformat(ts):
 
 
 def convert_datetime_to(dt, to=turoboro.ISO):
+    from datetime import timezone
+    dt = dt.replace(tzinfo=timezone.utc)
     if to == turoboro.ISO:
-        return dt.isoformat()
+        return dt.strftime('%Y-%m-%dT%H:%M:%S')
     if to == turoboro.POSIX:
         return int(dt.timestamp())
 
-    return dt
+    return dt.replace(tzinfo=None)
