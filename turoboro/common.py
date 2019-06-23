@@ -45,6 +45,6 @@ def convert_datetime_to(dt, to=turoboro.ISO):
     if to == turoboro.ISO:
         return dt.isoformat()
     if to == turoboro.POSIX:
-        return dt.timestamp()
+        return int(dt.timestamp())
 
     return dt

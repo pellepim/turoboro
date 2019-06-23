@@ -36,3 +36,12 @@ class IsListOfMonthsTest(unittest.TestCase):
             (turoboro.MARCH, turoboro.SEPTEMBER, turoboro.JANUARY),
             turoboro.common.is_list_of_months((turoboro.MARCH, turoboro.SEPTEMBER, turoboro.JANUARY))
         )
+
+
+class ConvertDatetimeToTest(unittest.TestCase):
+    def test(self):
+        from datetime import datetime
+        dt = datetime(2014, 1, 1)
+        self.assertEqual(turoboro.common.convert_datetime_to(dt, turoboro.ISO), '2014-01-01T00:00:00')
+        self.assertEqual(turoboro.common.convert_datetime_to(dt, turoboro.POSIX), 1388530800)
+        self.assertEqual(turoboro.common.convert_datetime_to(dt, turoboro.DATETIME_INSTANCE), dt)
