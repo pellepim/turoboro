@@ -1,6 +1,7 @@
 import unittest
-import turoboro.common
 from datetime import datetime
+import turoboro
+import turoboro.common
 import voluptuous
 import itertools
 
@@ -313,3 +314,20 @@ class DailyRuleWithRepeatNTimesTests(unittest.TestCase):
         self.assertEqual(result_staggered.first, '2014-11-26T14:00:00')
         self.assertEqual(result_staggered.last, '2014-12-31T14:00:00')
         self.assertEqual(result_staggered.count, 6)
+
+
+class DailyInfiniteRuleTests(unittest.TestCase):
+    def test(self):
+        daily_rule = turoboro.DailyRule(datetime(2014, 1, 1), every_nth_day=5, except_days=turoboro.WEEKEND,
+                                        on_hour=8)
+        result = daily_rule.compute()
+        self.assertTrue(result.infinite)
+        self.assertEqual(result.count, 100)
+        self.assertEqual(result.first, '2014-01-01T08:00:00')
+        self.assertEqual(result.last, '2015-11-27T08:00:00')
+
+        result = daily_rule.compute(datetime(2015, 11, 27), max_count_if_infinite=20)
+        self.assertTrue(result.infinite)
+        self.assertEqual(result.count, 20)
+        self.assertEqual(result.first, '2015-12-02T08:00:00')
+        self.assertEqual(result.last, '2016-04-15T08:00:00')

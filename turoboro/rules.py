@@ -27,7 +27,7 @@ class Result(object):
 
     @property
     def last(self):
-        if self.datetimes and not self.infinite:
+        if self.datetimes:
             return turoboro.common.convert_datetime_to(self.datetimes[-1], self.return_as)
 
         return None

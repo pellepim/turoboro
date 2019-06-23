@@ -226,9 +226,25 @@ class DailyRule(Rule):
 
         return Result(result, return_as=return_as, segment_from=from_dt)
 
-    def compute(self, from_dt=None, return_as=turoboro.ISO):
+    def _compute_infinite(self, from_dt, working_date, max_count, return_as):
+        result = []
+        count = 0
+        if from_dt is not None and from_dt != working_date:
+            working_date = self._stagger_forward(from_dt)
+
+        while count < max_count:
+            if self._is_allowed(working_date):
+                result.append(working_date)
+                count += 1
+            working_date = working_date + timedelta(days=self.spec['every_nth_day'])
+
+        return Result(result, return_as=return_as, infinite=True)
+
+    def compute(self, from_dt=None, max_count_if_infinite=100, return_as=turoboro.ISO):
         working_date = turoboro.common.datetime_from_isoformat(self.spec['start'])
         if self.spec['end'] is not None:
             return self._compute_with_enddate(from_dt, working_date, return_as)
-        if self.spec['repeat'] is not None:
+        elif self.spec['repeat'] is not None:
             return self._compute_n_times(from_dt, working_date, return_as)
+
+        return self._compute_infinite(from_dt, working_date, max_count_if_infinite, return_as)
