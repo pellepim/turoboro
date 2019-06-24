@@ -1,5 +1,5 @@
 [![CircleCI](https://circleci.com/gh/pellepim/turoboro.svg?style=shield)](https://circleci.com/gh/pellepim/turoboro)
-![Alt text](https://raw.githubusercontent.com/pellepim/turoboro/master/coverage.svg "Code coverage")
+![Alt text](coverage.svg "Code coverage")
 # turoboro
 A python library for specifying recurring time rules and getting timestamps in return.
 
