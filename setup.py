@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name='turoboro',
-    version='0.0.1',
+    version='0.0.2',
     scripts=[],
     author="Jon Nylander",
     author_email="pellepim@gmail.com",
