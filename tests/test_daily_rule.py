@@ -315,6 +315,15 @@ class DailyRuleWithRepeatNTimesTests(unittest.TestCase):
         self.assertEqual(result_staggered.last, '2014-12-31T14:00:00')
         self.assertEqual(result_staggered.count, 6)
 
+    def test_next(self):
+        daily_rule = turoboro.DailyRule(
+            datetime(2014, 1, 1), repeat_n_times=44, every_nth_day=7, except_weekdays=turoboro.WEEKEND,
+            except_months=(turoboro.FEBRUARY, turoboro.OCTOBER), on_hour=14
+        )
+        result = daily_rule.result()
+        self.assertEqual(next(result), '2014-01-01T14:00:00')
+        self.assertEqual(next(result), '2014-01-08T14:00:00')
+
 
 class DailyInfiniteRuleTests(unittest.TestCase):
     def test(self):
@@ -331,3 +340,13 @@ class DailyInfiniteRuleTests(unittest.TestCase):
         self.assertEqual(result.count, 20)
         self.assertEqual(result.first, '2015-12-02T08:00:00')
         self.assertEqual(result.last, '2016-04-15T08:00:00')
+
+    def test_next(self):
+        daily_rule = turoboro.DailyRule(
+            datetime(2014, 1, 1), every_nth_day=7, except_weekdays=turoboro.WEEKEND,
+            except_months=(turoboro.FEBRUARY, turoboro.OCTOBER), on_hour=14
+        )
+
+        result = daily_rule.result(datetime.utcnow())
+        for res in result:
+            daily_rule._is_allowed(turoboro.common.datetime_from_isoformat(res))

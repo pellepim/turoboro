@@ -9,7 +9,15 @@ WEEKEND = (SATURDAY, SUNDAY)
 DAYS = (
     SUNDAY, MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY
 )
-
+TO_DAY = {
+    0: 'Monday',
+    1: 'Tuesday',
+    2: 'Wednesday',
+    3: 'Thursday',
+    4: 'Friday',
+    5: 'Saturday',
+    6: 'Sunday'
+}
 JANUARY = 1
 FEBRUARY = 2
 MARCH = 3
@@ -25,7 +33,20 @@ DECEMBER = 12
 MONTHS = (
     JANUARY, FEBRUARY, MARCH, APRIL, MAY, JUNE, JULY, AUGUST, SEPTEMBER, OCTOBER, NOVEMBER, DECEMBER
 )
-
+TO_MONTH = {
+    1: 'January',
+    2: 'February',
+    3: 'March',
+    4: 'April',
+    5: 'May',
+    6: 'June',
+    7: 'July',
+    8: 'August',
+    9: 'September',
+    10: 'October',
+    11: 'November',
+    12: 'December'
+}
 ISO = 'ISO'
 DATETIME_INSTANCE = 'datetime'
 POSIX = 'posix'

@@ -74,6 +74,29 @@ class DailyRule(Rule):
         if end_on:
             self.end_on(end_on)
 
+    def __repr__(self):
+        nth = 'every' if self.spec['every_nth_day'] == 1 else 'every %d days' % self.spec['every_nth_day']
+
+        _repr = 'DailyRule: Starts on: %(starts)s, repeats %(nth)s at %(hour)d o\'clock, ' % {
+            'starts': self.spec['start'],
+            'nth': nth,
+            'hour': self.spec['on_hour']
+        }
+
+        if self.spec['end'] is None and self.spec['repeat'] is None:
+            _repr += 'forever. '
+        elif self.spec['end'] is not None:
+            _repr += 'until %s. ' % self.spec['end']
+        else:
+            _repr += '%s times. ' % self.spec['repeat']
+
+        if self.spec['except_days']:
+            _repr += 'Except days %s. ' % ', '.join([turoboro.TO_DAY[d] for d in self.spec['except_days']])
+        if self.spec['except_months']:
+            _repr += 'Except months %s.' % ', '.join([turoboro.TO_MONTH[m] for m in self.spec['except_months']])
+
+        return _repr
+
     def validate_spec(self, spec):
         """
         Validates the rule specification
@@ -185,7 +208,8 @@ class DailyRule(Rule):
         :type n: int
         :return: turoboro.rules.DailyRule
         """
-        return self.set_if_valid('repeat', n)
+        self.set_if_valid('repeat', n)
+        return self
 
     def _is_allowed(self, dt):
         if self.spec['except_days'] is not None and dt.weekday() in self.spec['except_days']:
@@ -249,3 +273,22 @@ class DailyRule(Rule):
             return self._compute_n_times(from_dt, working_date, return_as)
 
         return self._compute_infinite(from_dt, working_date, max_count_if_infinite, return_as)
+
+    def result(self, from_dt=None, max_count_if_infinite=3, return_as=turoboro.ISO):
+        result = self.compute(from_dt=from_dt, max_count_if_infinite=max_count_if_infinite,
+                              return_as=turoboro.DATETIME_INSTANCE)
+        count = 0
+        last_dt = None
+        for dt in result.all:
+            count += 1
+            last_dt = dt
+            yield turoboro.common.convert_datetime_to(dt, return_as)
+
+        if count == len(result.all) and result.infinite:
+            try:
+                _r = self.result(from_dt=last_dt, max_count_if_infinite=max_count_if_infinite, return_as=return_as)
+                count += 1
+                for r in _r:
+                    yield r
+            except (RecursionError, OverflowError):
+                pass
