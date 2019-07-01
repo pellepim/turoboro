@@ -8,7 +8,7 @@ import itertools
 
 class DailyRuleSetupTests(unittest.TestCase):
     def setUp(self):
-        self.starting_point = turoboro.common.datetime_from_isoformat('2014-01-01T00:00:00')
+        self.starting_point = datetime(2014, 1, 1)
         self.daily_rule = turoboro.DailyRule(self.starting_point)
 
     def test_default_spec(self):
@@ -19,8 +19,9 @@ class DailyRuleSetupTests(unittest.TestCase):
             'every_nth_day': 1,
             'rule': 'daily',
             'repeat': None,
-            'start': '2014-01-01T00:00:00',
-            'end': None
+            'start': '2014-01-01T00:00:00+00:00',
+            'end': None,
+            'timezone': 'UTC'
         }
 
         self.assertEqual(self.daily_rule.spec, expected)
@@ -102,20 +103,20 @@ class DailyRuleSetupTests(unittest.TestCase):
     def test_end_before(self):
         # End date cannot be before start date, and a repeat n times-rule may not be set after an end date
         # has been specified
-        self.assertRaises(ValueError, self.daily_rule.end_before,
+        self.assertRaises(ValueError, self.daily_rule._end_before,
                           turoboro.common.datetime_from_isoformat('2013-12-31T00:00:00'))
-        self.daily_rule.end_before(turoboro.common.datetime_from_isoformat('2014-05-30T00:00:00'))
+        self.daily_rule._end_before(turoboro.common.datetime_from_isoformat('2014-05-30T00:00:00'))
         self.assertEqual(self.daily_rule.spec['end'], '2014-05-30T00:00:00')
         self.assertRaises(ValueError, self.daily_rule.repeat_n_times, 10)
 
     def test_end_on(self):
         self.daily_rule.end_on(turoboro.common.datetime_from_isoformat('2014-05-30T00:00:00'))
-        self.assertEqual(self.daily_rule.spec['end'], '2014-05-31T00:00:00')
+        self.assertEqual(self.daily_rule.spec['end'], '2014-05-31T00:00:00+00:00')
 
     def test_repeat_n_times(self):
         self.daily_rule.repeat_n_times(10)
         self.assertEqual(self.daily_rule.spec['repeat'], 10)
-        self.assertRaises(ValueError, self.daily_rule.end_before,
+        self.assertRaises(ValueError, self.daily_rule._end_before,
                           turoboro.common.datetime_from_isoformat('2014-12-31T00:00:00'))
 
     def test_raises(self):
@@ -123,7 +124,7 @@ class DailyRuleSetupTests(unittest.TestCase):
         self.assertRaises(ValueError, self.daily_rule.except_weekdays, turoboro.WEDNESDAY)
         # The starting date is in January - we may not exclude January as valid..
         self.assertRaises(ValueError, self.daily_rule.except_months, turoboro.JANUARY)
-        # We cannot pick an earlier end date that the start date
+        # We cannot pick an earlier end date than the start date
         self.assertRaises(ValueError, self.daily_rule.end_on, datetime(2013, 12, 31))
         # We're not allowed to set a repeat count if we have an end date
         self.daily_rule.end_on(datetime(2014, 1, 31))
@@ -132,12 +133,6 @@ class DailyRuleSetupTests(unittest.TestCase):
         self.daily_rule.end_on(None)
         self.daily_rule.repeat_n_times(10)
         self.assertRaises(ValueError, self.daily_rule.end_on, datetime(2014, 1, 31))
-
-    def test_empty_init(self):
-        daily_rule = turoboro.DailyRule()
-        today = datetime.utcnow()
-        today = today.replace(hour=0, minute=0, second=0, microsecond=0)
-        self.assertEqual(daily_rule.spec['start'], today.isoformat())
 
     def test_invalid_start(self):
         self.assertRaises(ValueError, turoboro.DailyRule, 'asd')
@@ -156,11 +151,11 @@ class DailyRuleSetupTests(unittest.TestCase):
 
     def test_reset_end(self):
         daily_rule = turoboro.DailyRule(datetime(2014, 1, 1), datetime(2014, 5, 30))
-        self.assertEqual(daily_rule.spec['end'], '2014-05-31T00:00:00')
+        self.assertEqual(daily_rule.spec['end'], '2014-05-31T00:00:00+00:00')
         daily_rule.end_on(None)
         self.assertEqual(daily_rule.spec['end'], None)
         daily_rule = turoboro.DailyRule(datetime(2014, 1, 1), datetime(2014, 5, 30))
-        daily_rule.end_before(None)
+        daily_rule._end_before(None)
         self.assertEqual(daily_rule.spec['end'], None)
 
     def test_faulty_end_date(self):

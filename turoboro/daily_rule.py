@@ -2,6 +2,7 @@ import voluptuous
 from turoboro.rules import Rule, Result
 import turoboro.common
 from datetime import datetime, timedelta
+import pytz
 
 
 class DailyRule(Rule):
@@ -29,25 +30,24 @@ class DailyRule(Rule):
                 voluptuous.Length(min=1, max=11)
             )
         ),
-        'on_hour': voluptuous.Range(min=0, max=23)
+        'on_hour': voluptuous.Range(min=0, max=23),
+        'timezone': voluptuous.In(pytz.all_timezones)
     })
 
-    def __init__(self, start=None, end_on=None, repeat_n_times=None, every_nth_day=1, except_weekdays=None,
-                 except_months=None, on_hour=0):
-        if start is None:
-            start = datetime.utcnow()
-
+    def __init__(self, start, end_on=None, repeat_n_times=None, every_nth_day=1, except_weekdays=None,
+                 except_months=None, on_hour=0, timezone='UTC'):
         if not isinstance(start, datetime):
             raise ValueError('You must specify a datetime')
 
+        tz = pytz.timezone(timezone)
         start = start.replace(hour=0, minute=0, second=0, microsecond=0)
+        start = tz.localize(start)
 
         if isinstance(end_on, datetime):
+            end_on = end_on.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_on = tz.localize(end_on)
             if end_on < start:
                 raise ValueError('End cannot be before start')
-
-            end_on = end_on.replace(hour=0, minute=0, second=0, microsecond=0)
-
         self.spec = {
             "start": start.isoformat(),
             "end": None,
@@ -56,12 +56,15 @@ class DailyRule(Rule):
             "every_nth_day": 1,
             "except_days": None,
             "except_months": None,
-            "on_hour": 0
+            "on_hour": 0,
+            "timezone": timezone
         }
 
         if repeat_n_times:
             self.repeat_n_times(repeat_n_times)
+
         self.every_nth_day(every_nth_day)
+
         try:
             self.except_weekdays(*except_weekdays)
         except TypeError:
@@ -71,6 +74,7 @@ class DailyRule(Rule):
         except TypeError:
             pass
         self.on_hour(on_hour)
+
         if end_on:
             self.end_on(end_on)
 
@@ -120,6 +124,18 @@ class DailyRule(Rule):
 
         return self.SPEC_SCHEMA(spec)
 
+    @property
+    def start_datetime(self):
+        dt = turoboro.common.datetime_from_isoformat(self.spec['start'])
+        return self.timezone.localize(dt)
+
+    @property
+    def end_datetime(self):
+        if self.spec['end'] is not None:
+            dt = turoboro.common.datetime_from_isoformat(self.spec['end'])
+            return self.timezone.localize(dt)
+        return None
+
     def every_nth_day(self, n):
         """
         Where `n` is the number of days between two occurrences
@@ -164,16 +180,12 @@ class DailyRule(Rule):
         :return: turoboro.rules.DailyRule
         """
         self.set_if_valid('on_hour', hour)
-        start_date = turoboro.common.datetime_from_isoformat(self.spec['start'])
-        start_date = start_date.replace(hour=hour)
-        self.set_if_valid('start', start_date.isoformat())
+        self.spec['start'] = self.start_datetime.replace(hour=hour).isoformat()
         if self.spec['end'] is not None:
-            end_date = turoboro.common.datetime_from_isoformat(self.spec['end'])
-            end_date = end_date.replace(hour=hour)
-            self.set_if_valid('end', end_date.isoformat())
+            self.spec['end'] = self.end_datetime.replace(hour=hour).isoformat()
         return self
 
-    def end_before(self, end):
+    def _end_before(self, end):
         """
         The last occurrence of the recurring rule should fall before this specified date.
         :param end: A datetime specifying the last day that the rule is valid before.
@@ -195,10 +207,15 @@ class DailyRule(Rule):
         :type end: datetime | None
         :return: turoboro.rules.DailyRule
         """
+
         if end is None:
             self.set_if_valid('end', None)
             return self
-        return self.end_before(end + timedelta(days=1))
+        end = end.replace(hour=self.spec['on_hour'], minute=0, second=0, microsecond=0)
+        if end.tzinfo is None:
+            end = self.timezone.localize(end)
+        self._end_before(end + timedelta(days=1))
+        return self
 
     def repeat_n_times(self, n):
         """
@@ -236,7 +253,7 @@ class DailyRule(Rule):
                 result.append(working_date)
             working_date = working_date + timedelta(days=self.spec['every_nth_day'])
 
-        return Result(result, return_as=return_as)
+        return Result(result, self, return_as=return_as)
 
     def _compute_n_times(self, from_dt, working_date, return_as):
         result = []
@@ -249,7 +266,7 @@ class DailyRule(Rule):
                 count += 1
             working_date = working_date + timedelta(days=self.spec['every_nth_day'])
 
-        return Result(result, return_as=return_as, segment_from=from_dt)
+        return Result(result, self, return_as=return_as, segment_from=from_dt)
 
     def _compute_infinite(self, from_dt, working_date, max_count, return_as):
         result = []
@@ -263,7 +280,7 @@ class DailyRule(Rule):
                 count += 1
             working_date = working_date + timedelta(days=self.spec['every_nth_day'])
 
-        return Result(result, return_as=return_as, infinite=True)
+        return Result(result, self, return_as=return_as, infinite=True)
 
     def compute(self, from_dt=None, max_count_if_infinite=100, return_as=turoboro.ISO):
         working_date = turoboro.common.datetime_from_isoformat(self.spec['start'])
@@ -282,7 +299,7 @@ class DailyRule(Rule):
         for dt in result.all:
             count += 1
             last_dt = dt
-            yield turoboro.common.convert_datetime_to(dt, return_as)
+            yield self.repr_dt(dt, return_as)
 
         if count == len(result.all) and result.infinite:
             try:

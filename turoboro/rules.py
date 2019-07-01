@@ -1,14 +1,15 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 import abc
-import voluptuous
 import turoboro.common
 import turoboro.constants
 from copy import deepcopy
+import pytz
 
 
 class Result(object):
-    def __init__(self, datetimes, infinite=False, segment_from=None, return_as=turoboro.ISO):
+    def __init__(self, datetimes, rule, infinite=False, segment_from=None, return_as=turoboro.ISO):
         self.datetimes = datetimes
+        self.rule = rule
         self.infinite = infinite
         self.return_as = return_as
         if segment_from is not None and isinstance(segment_from, datetime):
@@ -21,14 +22,14 @@ class Result(object):
     @property
     def first(self):
         if self.datetimes:
-            return turoboro.common.convert_datetime_to(self.datetimes[0], self.return_as)
+            return self.rule.repr_dt(self.datetimes[0], self.return_as)
 
         return None
 
     @property
     def last(self):
         if self.datetimes:
-            return turoboro.common.convert_datetime_to(self.datetimes[-1], self.return_as)
+            return self.rule.repr_dt(self.datetimes[-1], self.return_as)
 
         return None
 
@@ -38,7 +39,7 @@ class Result(object):
 
     def formatted_list(self, _list):
         return [
-            turoboro.common.convert_datetime_to(n, self.return_as) for n in _list
+            self.rule.repr_dt(n, self.return_as) for n in _list
         ]
 
     def _raw_segment(self, _from, to=None):
@@ -64,6 +65,10 @@ class Rule:
     def spec(self, spec):
         setattr(self, '_spec', self.validate_spec(spec))
 
+    @property
+    def timezone(self):
+        return pytz.timezone(self.spec['timezone'])
+
     @abc.abstractmethod
     def compute(self):
         pass
@@ -78,3 +83,5 @@ class Rule:
         self.validate_spec(spec)
         self.spec = spec
 
+    def repr_dt(self, dt, to=turoboro.ISO):
+        return turoboro.common.convert_datetime_to(dt, to)
