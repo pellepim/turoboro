@@ -1,8 +1,15 @@
 import voluptuous
-from turoboro.rules import Rule, Result
+from turoboro.rules import Rule
+from turoboro.result import Result
 import turoboro.common
 from datetime import datetime, timedelta
 import pytz
+
+# For Python 2 compatibility
+try:
+    RecursionError()
+except:
+    RecursionError = RuntimeError
 
 
 class DailyRule(Rule):
@@ -79,7 +86,7 @@ class DailyRule(Rule):
             self.end_on(end_on)
 
     def __repr__(self):
-        nth = 'every' if self.spec['every_nth_day'] == 1 else 'every %d days' % self.spec['every_nth_day']
+        nth = 'every day' if self.spec['every_nth_day'] == 1 else 'every %d days' % self.spec['every_nth_day']
 
         _repr = 'DailyRule: Starts on: %(starts)s, repeats %(nth)s at %(hour)d o\'clock, ' % {
             'starts': self.spec['start'],
@@ -239,7 +246,7 @@ class DailyRule(Rule):
 
     def _stagger_forward(self, from_dt):
         from_dt = from_dt.replace(hour=self.spec['on_hour'], minute=0, second=0, microsecond=0)
-        period = from_dt - turoboro.common.datetime_from_isoformat(self.spec['start'])
+        period = from_dt - self.timezone.localize(turoboro.common.datetime_from_isoformat(self.spec['start']))
         rest = period.days % self.spec['every_nth_day']
         return from_dt + timedelta(days=self.spec['every_nth_day'] - rest)
 
@@ -247,7 +254,7 @@ class DailyRule(Rule):
         result = []
         if from_dt is not None and from_dt != working_date:
             working_date = self._stagger_forward(from_dt)
-        end_date = turoboro.common.datetime_from_isoformat(self.spec['end'])
+        end_date = self.timezone.localize(turoboro.common.datetime_from_isoformat(self.spec['end']))
         while working_date < end_date:
             if self._is_allowed(working_date):
                 result.append(working_date)
@@ -271,6 +278,10 @@ class DailyRule(Rule):
     def _compute_infinite(self, from_dt, working_date, max_count, return_as):
         result = []
         count = 0
+        if working_date.tzinfo is None:
+            working_date = self.timezone.localize(working_date)
+        if from_dt is not None and from_dt.tzinfo is None:
+            from_dt = self.timezone.localize(from_dt)
         if from_dt is not None and from_dt != working_date:
             working_date = self._stagger_forward(from_dt)
 
@@ -283,7 +294,10 @@ class DailyRule(Rule):
         return Result(result, self, return_as=return_as, infinite=True)
 
     def compute(self, from_dt=None, max_count_if_infinite=100, return_as=turoboro.ISO):
-        working_date = turoboro.common.datetime_from_isoformat(self.spec['start'])
+        working_date = self.timezone.localize(turoboro.common.datetime_from_isoformat(self.spec['start']))
+
+        if from_dt is not None and from_dt.tzinfo is None:
+            from_dt = self.timezone.localize(from_dt)
         if self.spec['end'] is not None:
             return self._compute_with_enddate(from_dt, working_date, return_as)
         elif self.spec['repeat'] is not None:
@@ -299,7 +313,7 @@ class DailyRule(Rule):
         for dt in result.all:
             count += 1
             last_dt = dt
-            yield self.repr_dt(dt, return_as)
+            yield self.repr_dt(dt, return_as, self.timezone)
 
         if count == len(result.all) and result.infinite:
             try:
