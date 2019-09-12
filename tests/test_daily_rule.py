@@ -91,7 +91,7 @@ class DailyRuleSetupTests(unittest.TestCase):
         # We cannot allow all the months of the year to be excluded from the rule
         self.assertRaises(ValueError, self.daily_rule.except_months, *turoboro.MONTHS)
 
-    def test_hour(self):
+    def test_on_hour(self):
         for hour in range(0, 24):
             self.daily_rule.on_hour(hour)
             self.assertEqual(self.daily_rule.spec['on_hour'], hour)
@@ -169,7 +169,6 @@ class DailyRuleWithEndDateTests(unittest.TestCase):
         result = daily_rule.compute()
         self.assertEqual(result.count, 23)
         self.assertEqual(result.first, '2014-01-01T02:15:00+00:00')
-
 
     def test(self):
         daily_rule = turoboro.DailyRule(datetime(2014, 1, 1), except_weekdays=turoboro.WEEKEND)
