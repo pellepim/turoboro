@@ -3,19 +3,8 @@ import turoboro
 import calendar
 
 
-class UTC(tzinfo):
-    def utcoffset(self, dt):
-        return timedelta(hours=1)
-
-    def tzname(self, dt):
-        return "UTC"
-
-    def dst(self, dt):
-        return timedelta(0)
-
-
 def is_iso_datetime(iso_timestamp):
-    return iso_timestamp if datetime.strptime(iso_timestamp, '%Y-%m-%dT%H:%M:%S') else None
+    return iso_timestamp if datetime.strptime(iso_timestamp[0:19], '%Y-%m-%dT%H:%M:%S') else None
 
 
 def is_list_of_days(days):
@@ -49,14 +38,13 @@ def is_list_of_months(months):
 
 
 def datetime_from_isoformat(ts):
-    return datetime.strptime(ts, '%Y-%m-%dT%H:%M:%S')
+    return datetime.strptime(ts[:19], '%Y-%m-%dT%H:%M:%S')
 
 
 def convert_datetime_to(dt, to=turoboro.ISO):
-    dt = dt.replace(tzinfo=UTC())
     if to == turoboro.ISO:
-        return dt.strftime('%Y-%m-%dT%H:%M:%S')
+        return dt.isoformat()
     if to == turoboro.POSIX:
         return int(calendar.timegm(dt.timetuple()))
 
-    return dt.replace(tzinfo=None)
+    return dt
