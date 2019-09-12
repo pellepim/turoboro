@@ -42,13 +42,15 @@ Lets go through them one at a time.
     >>> import turoboro
     >>> from datetime import datetime
     >>> rule = turoboro.DailyRule(start=datetime(2014, 1, 1))
+    >>> rule
+    {"end": null, "every_nth_day": 1, "except_days": null, "except_months": null, "on_hour": 0, "repeat": null, "rule": "daily", "start": "2014-01-01T00:00:00+00:00", "timezone": "UTC"}
     >>> rule.every_nth_day(2).on_hour(8)
-    DailyRule: Starts on: 2014-01-01T08:00:00, repeats every 2 days at 8 o'clock, forever.
+    {"end": null, "every_nth_day": 2, "except_days": null, "except_months": null, "on_hour": 8, "repeat": null, "rule": "daily", "start": "2014-01-01T08:00:00+00:00", "timezone": "UTC"}
     >>> rule.except_weekdays(*turoboro.WEEKEND)
-    DailyRule: Starts on: 2014-01-01T08:00:00, repeats every 2 days at 8 o'clock, forever. Except days Saturday, Sunday.
+    {"end": null, "every_nth_day": 2, "except_days": [5, 6], "except_months": null, "on_hour": 8, "repeat": null, "rule": "daily", "start": "2014-01-01T08:00:00+00:00", "timezone": "UTC"}
     >>> rule.end_on(datetime(2014, 1, 31))
-    DailyRule: Starts on: 2014-01-01T08:00:00, repeats 2 days at 8 o'clock, until 2014-02-01T00:00:00. Except days Saturday, Sunday. 
-    
+    {"end": "2014-02-01T00:00:00+00:00", "every_nth_day": 2, "except_days": [5, 6], "except_months": null, "on_hour": 8, "repeat": null, "rule": "daily", "start": "2014-01-01T08:00:00+00:00", "timezone": "UTC"}
+ 
 Alright, now we have an instance of the `DailyRule` class.
 
 You can also instantiate the exact same thing using only a constructor:
@@ -57,6 +59,21 @@ You can also instantiate the exact same thing using only a constructor:
     ...     datetime(2014, 1, 1), every_nth_day=2, except_weekdays=turoboro.WEEKEND,
     ...     end_on=datetime(2014, 1, 31), on_hour=8
     ... )
+
+Or with a factory method using the "pure" json spec:
+
+    >>> rule = turoboro.Rule.from_json_spec({
+        "end": "2014-02-01T00:00:00+00:00",
+        "every_nth_day": 2,
+        "except_days": [5, 6],
+        "except_months": null,
+        "on_hour": 8,
+        "repeat": null,
+        "rule": "daily",
+        "start": "2014-01-01T08:00:00+00:00",
+        "timezone": "UTC"
+    })
+    
 
 Lets see what actual times this resolves to.
 
@@ -96,11 +113,11 @@ or in the lingo of `turoboro`: `repeat_n_times`. As such:
 Oops, lets first kill the end date, (because lets be explicit with our intentions.)
     
     >>> rule.end_on(None).repeat_n_times(100)
-    DailyRule: Starts on: 2014-01-01T08:00:00, repeats 2 days at 8 o'clock, 100 times. Except days Saturday, Sunday.
+    {"end": null, "every_nth_day": 2, "except_days": [5, 6], "except_months": null, "on_hour": 8, "repeat": 100, "rule": "daily", "start": "2014-01-01T08:00:00+00:00", "timezone": "UTC"}
     
 You can also let your rule be infinite by omitting to provide an end date or a number of 
 occurrences. The `computed.first`, `computed.last` and `computed.all` attributes will still
-return behave as if the result is a bounded set (defaults to 100 occurrences). However, by
+behave as if the result is a bounded set (defaults to 100 occurrences). However, by
 using the `rule.result()` generator function you can iterate forward beyond the bounds that
 `rule.compute()` would give. Not infinitely far though, so iterating through the generator
 will eventually come to a stop, how quickly depends on the batch size that you specify with
@@ -118,8 +135,3 @@ upcoming set of valid datetimes by simply telling `compute` or `result` and spec
     >>> result = rule.result(from_dt=datetime.utcnow())
     >>> next(result)
     '2019-06-26T08:00:00'
- 
-
-
-
-

@@ -4,6 +4,7 @@ import turoboro.constants
 from copy import deepcopy
 import pytz
 from datetime import timedelta
+import json
 
 # For Python 2 compatibility
 try:
@@ -11,12 +12,16 @@ try:
 except:
     RecursionError = RuntimeError
 
+
 class Rule:
     __metaclass__ = abc.ABCMeta
 
     @property
     def spec(self):
         return getattr(self, '_spec', {})
+
+    def __repr__(self):
+        return json.dumps(self.spec, sort_keys=True)
 
     @spec.setter
     def spec(self, spec):
@@ -32,6 +37,10 @@ class Rule:
 
     @abc.abstractmethod
     def validate_spec(self, spec):
+        pass
+
+    @abc.abstractclassmethod
+    def factory(cls, spec):
         pass
 
     def set_if_valid(self, field, value):
@@ -148,3 +157,11 @@ class Rule:
                     yield r
             except (RecursionError, OverflowError):
                 pass
+
+    @classmethod
+    def from_json_spec(cls, spec):
+        spec = json.loads(spec)
+        if spec['rule'] == 'daily':
+            return turoboro.DailyRule.factory(spec)
+        if spec['rule'] == 'weekly':
+            return turoboro.WeeklyRule.factory(spec)

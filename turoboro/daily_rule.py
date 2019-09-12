@@ -80,6 +80,14 @@ class DailyRule(Rule):
         if end_on:
             self.end_on(end_on)
 
+    @classmethod
+    def factory(cls, spec):
+        daily_rule = cls(datetime.utcnow())
+        if daily_rule.validate_spec(spec):
+            daily_rule.spec = spec
+
+        return daily_rule
+
     def validate_spec(self, spec):
         """
         Validates the rule specification

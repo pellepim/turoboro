@@ -82,6 +82,14 @@ class WeeklyRule(Rule):
         if end_on:
             self.end_on(end_on)
 
+    @classmethod
+    def factory(cls, spec):
+        daily_rule = cls(datetime.utcnow())
+        if daily_rule.validate_spec(spec):
+            daily_rule.spec = spec
+
+        return daily_rule
+
     def every_nth_week(self, n):
         """
         Where `n` is the number of days between two occurrences
