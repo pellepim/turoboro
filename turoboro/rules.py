@@ -6,11 +6,21 @@ import pytz
 from datetime import timedelta
 import json
 
-# For Python 2 compatibility
+# <PYTHON2COMPATIBILITY>
 try:
     RecursionError()
 except:
     RecursionError = RuntimeError
+
+
+class abstractclassmethod(classmethod):
+
+    __isabstractmethod__ = True
+
+    def __init__(self, callable):
+        callable.__isabstractmethod__ = True
+        super(abstractclassmethod, self).__init__(callable)
+# </PYTHON2COMPATIBILITY>
 
 
 class Rule:
@@ -39,7 +49,7 @@ class Rule:
     def validate_spec(self, spec):
         pass
 
-    @abc.abstractclassmethod
+    @abstractclassmethod
     def factory(cls, spec):
         pass
 
