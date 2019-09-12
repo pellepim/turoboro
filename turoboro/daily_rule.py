@@ -5,12 +5,6 @@ import turoboro.common
 from datetime import datetime, timedelta
 import pytz
 
-# For Python 2 compatibility
-try:
-    RecursionError()
-except:
-    RecursionError = RuntimeError
-
 
 class DailyRule(Rule):
     SPEC_SCHEMA = voluptuous.Schema({

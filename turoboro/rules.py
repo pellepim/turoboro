@@ -5,6 +5,11 @@ from copy import deepcopy
 import pytz
 from datetime import timedelta
 
+# For Python 2 compatibility
+try:
+    RecursionError()
+except:
+    RecursionError = RuntimeError
 
 class Rule:
     __metaclass__ = abc.ABCMeta
