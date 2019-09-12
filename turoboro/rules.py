@@ -169,7 +169,7 @@ class Rule:
                 pass
 
     @classmethod
-    def from_json_spec(cls, spec):
+    def from_spec(cls, spec):
         spec = json.loads(spec)
         if spec['rule'] == 'daily':
             return turoboro.DailyRule.factory(spec)

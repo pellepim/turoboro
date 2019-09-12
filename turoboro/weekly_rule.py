@@ -84,7 +84,7 @@ class WeeklyRule(Rule):
 
     @classmethod
     def factory(cls, spec):
-        daily_rule = cls(datetime.utcnow())
+        daily_rule = cls(datetime.utcnow(), (0,))
         if daily_rule.validate_spec(spec):
             daily_rule.spec = spec
 
