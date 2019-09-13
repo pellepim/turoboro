@@ -4,12 +4,12 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name='turoboro',
-    version='0.0.3',
+    version='0.0.4',
     scripts=[],
     author="Jon Nylander",
     author_email="pellepim@gmail.com",
     description="A python library for specifying recurring time rules and getting timestamps in return.",
-    install_requires=['voluptuous'],
+    install_requires=['voluptuous', 'pytz'],
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/pellepim/turoboro",
