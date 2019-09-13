@@ -106,7 +106,6 @@ class Rule:
         if end is None:
             self.set_if_valid('end', None)
             return self
-        end = end.replace(hour=0, minute=0, second=0, microsecond=0)
         self.set_if_valid('end', end.isoformat())
         return self
 
