@@ -17,7 +17,7 @@ class DailyRuleSetupTests(unittest.TestCase):
             'except_months': None,
             'on_hour': 0,
             'every_nth_day': 1,
-            'rule': 'daily',
+            'rule': turoboro.RULE_DAILY,
             'repeat': None,
             'start': '2014-01-01T00:00:00+00:00',
             'end': None,

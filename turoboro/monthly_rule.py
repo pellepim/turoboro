@@ -132,5 +132,69 @@ class MonthlyRule(Rule):
 
         return self.SPEC_SCHEMA(spec)
 
-    def compute(self, from_dt=None, max_count_if_infinite=100, return_as=turoboro.ISO):
+    def _day_of_month_stagger(self, from_dt, start_dt):
+        start_dt_calc = (start_dt.year, start_dt.month)
+        from_dt_calc = (from_dt.year, from_dt.month)
+
+        months = (from_dt_calc[0] - start_dt_calc[0]) * 12 + from_dt_calc[1] - start_dt_calc[1]
+
+        # We've a from date before the earliest possible start date - return that instead
+        if months < 0:
+            return self.timezone.localize(turoboro.common.datetime_from_isoformat(self.spec['start']))
+
+        rest = months % self.spec['day_of_month_rule']['every_nth']
+
+        # No rest - we're already in the correct month, if we have not passed the day - we return the day
+        if rest == 0 and from_dt.day <= self.spec['day_of_month_rule']['day']:
+            return from_dt.replace(day=self.spec['day_of_month_rule']['day'])
+
+        month_pad = rest - self.spec['day_of_month_rule']['every_nth']
+
+        # If we pass a new year, we need to pad the year
+        stagger_to_year = from_dt.year + 1 if from_dt.month + month_pad > 12 else from_dt.year
+        # If we pass a new year, we need to stagger forward months - 12,
+        stagger_to_month = from_dt.month + month_pad - 12 if stagger_to_year > from_dt.year else from_dt.month + month_pad
+
+        return from_dt.replace(year=stagger_to_year, month=stagger_to_month, day=1)
+
+    def _stagger_forward(self, from_dt):
+        """
+        :param from_dt: the datetime we want to stagger forward from
+        :type from_dt: datetime
+        :return: datetime
+        """
+        from_dt = from_dt.replace(hour=self.spec['on_hour'], minute=0, second=0, microsecond=0)
+
+        start_dt = self.timezone.localize(turoboro.common.datetime_from_isoformat(self.spec['start']))
+        start_dt = start_dt.replace(day=1, hour=self.spec['on_hour'])
+
+        # 1. Day of month:
+        if self.spec['day_of_month_rule'] is not None:
+            return self._day_of_month_stagger(from_dt, start_dt)
+
+    def _compute_with_end_date(self, from_dt, working_date, return_as):
+        result = []
+        if from_dt is not None and from_dt != working_date:
+            working_date = self._stagger_forward(from_dt)
+
+        end_date = self.timezone.localize(turoboro.common.datetime_from_isoformat(self.spec['end']))
+
+        while working_date < end_date:
+            if self._is_allowed(working_date):
+                result.append(working_date)
+            working_date = self._bounce(working_date)
+
+        return Result(result, self, return_as=return_as)
+
+    def _compute_n_times(self, from_dt, working_date, return_as):
         pass
+
+    def _stagger_forward(self, from_dt):
+        pass
+
+    def _is_allowed(self, working_date):
+        pass
+
+    def _bounce(self, working_date):
+        pass
+

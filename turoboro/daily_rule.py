@@ -15,7 +15,7 @@ class DailyRule(Rule):
         'repeat': voluptuous.Any(
             None, voluptuous.All(int, voluptuous.Range(min=1))
         ),
-        'rule': 'daily',
+        'rule': turoboro.RULE_DAILY,
         'every_nth_day': voluptuous.Range(min=1, max=365),
         'except_days': voluptuous.Or(
             None,
@@ -174,32 +174,6 @@ class DailyRule(Rule):
 
         return Result(result, self, return_as=return_as, segment_from=from_dt)
 
-    def _compute_infinite(self, from_dt, working_date, max_count, return_as):
-        result = []
-        count = 0
-        if working_date.tzinfo is None:
-            working_date = self.timezone.localize(working_date)
-        if from_dt is not None and from_dt.tzinfo is None:
-            from_dt = self.timezone.localize(from_dt)
-        if from_dt is not None and from_dt != working_date:
-            working_date = self._stagger_forward(from_dt)
+    def _bounce(self, working_date):
+        return working_date + timedelta(days=self.spec['every_nth_day'])
 
-        while count < max_count:
-            if self._is_allowed(working_date):
-                result.append(working_date)
-                count += 1
-            working_date = working_date + timedelta(days=self.spec['every_nth_day'])
-
-        return Result(result, self, return_as=return_as, infinite=True)
-
-    def compute(self, from_dt=None, max_count_if_infinite=100, return_as=turoboro.ISO):
-        working_date = self.timezone.localize(turoboro.common.datetime_from_isoformat(self.spec['start']))
-
-        if from_dt is not None and from_dt.tzinfo is None:
-            from_dt = self.timezone.localize(from_dt)
-        if self.spec['end'] is not None:
-            return self._compute_with_end_date(from_dt, working_date, return_as)
-        elif self.spec['repeat'] is not None:
-            return self._compute_n_times(from_dt, working_date, return_as)
-
-        return self._compute_infinite(from_dt, working_date, max_count_if_infinite, return_as)

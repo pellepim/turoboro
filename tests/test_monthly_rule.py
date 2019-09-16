@@ -67,3 +67,11 @@ class WeeklyRuleSetupTests(unittest.TestCase):
             'weekday': turoboro.THURSDAY,
             'every_nth': 2
         })
+
+
+class MonthlyRuleWithEndDatesTests(unittest.TestCase):
+    def _test_day_of_month(self):
+        day_of_month_rule = turoboro.MonthlyRule(datetime(2014, 1, 1), day_of_month=31, end_on=datetime(2014, 12, 31))
+
+        result = day_of_month_rule.compute()
+        

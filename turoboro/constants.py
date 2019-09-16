@@ -50,5 +50,7 @@ TO_MONTH = {
 ISO = 'ISO'
 DATETIME_INSTANCE = 'datetime'
 POSIX = 'posix'
-
+RULE_DAILY = 'daily'
+RULE_MONTHLY = 'monthly'
+RULE_WEEKLY = 'weekly'
 FULL_RANGE = -1

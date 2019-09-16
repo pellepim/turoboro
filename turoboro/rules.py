@@ -1,6 +1,7 @@
 import abc
 import turoboro.common
 import turoboro.constants
+from turoboro.result import Result
 from copy import deepcopy
 import pytz
 from datetime import timedelta
@@ -42,8 +43,54 @@ class Rule:
         return pytz.timezone(self.spec['timezone'])
 
     @abc.abstractmethod
-    def compute(self, from_dt=None, max_count_if_infinite=100, return_as=turoboro.ISO):
+    def _compute_with_end_date(self, from_dt, working_date, return_as):
         pass
+
+    @abc.abstractmethod
+    def _compute_n_times(self, from_dt, working_date, return_as):
+        pass
+
+    @abc.abstractmethod
+    def _stagger_forward(self, from_dt):
+        pass
+
+    @abc.abstractmethod
+    def _is_allowed(self, working_date):
+        pass
+
+    @abc.abstractmethod
+    def _bounce(self, working_date):
+        pass
+
+    def _compute_infinite(self, from_dt, working_date, max_count, return_as):
+        result = []
+        count = 0
+        if working_date.tzinfo is None:
+            working_date = self.timezone.localize(working_date)
+        if from_dt is not None and from_dt.tzinfo is None:
+            from_dt = self.timezone.localize(from_dt)
+        if from_dt is not None and from_dt != working_date:
+            working_date = self._stagger_forward(from_dt)
+
+        while count < max_count:
+            if self._is_allowed(working_date):
+                result.append(working_date)
+                count += 1
+            working_date = self._bounce(working_date)
+
+        return Result(result, self, return_as=return_as, infinite=True)
+
+    def compute(self, from_dt=None, max_count_if_infinite=100, return_as=turoboro.ISO):
+        working_date = self.timezone.localize(turoboro.common.datetime_from_isoformat(self.spec['start']))
+
+        if from_dt is not None and from_dt.tzinfo is None:
+            from_dt = self.timezone.localize(from_dt)
+        if self.spec['end'] is not None:
+            return self._compute_with_end_date(from_dt, working_date, return_as)
+        elif self.spec['repeat'] is not None:
+            return self._compute_n_times(from_dt, working_date, return_as)
+
+        return self._compute_infinite(from_dt, working_date, max_count_if_infinite, return_as)
 
     @abc.abstractmethod
     def validate_spec(self, spec):
@@ -170,7 +217,10 @@ class Rule:
     @classmethod
     def from_spec(cls, spec):
         spec = json.loads(spec)
-        if spec['rule'] == 'daily':
+        if spec['rule'] == turoboro.RULE_DAILY:
             return turoboro.DailyRule.factory(spec)
-        if spec['rule'] == 'weekly':
+        if spec['rule'] == turoboro.RULE_WEEKLY:
             return turoboro.WeeklyRule.factory(spec)
+        if spec['rule'] == turoboro.RULE_MONTHLY:
+            return turoboro.MonthlyRule.factory(spec)
+
